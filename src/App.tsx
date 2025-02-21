@@ -68,7 +68,7 @@ function App() {
                 <Table className="h-4 w-4 mr-1.5" />
                 Table View
               </button>
-              <button
+{/*               <button
                 className={`flex items-center px-3 py-1.5 text-sm rounded-lg ${
                   view === 'dashboard'
                     ? 'bg-blue-500 text-white'
@@ -78,7 +78,7 @@ function App() {
               >
                 <LayoutDashboard className="h-4 w-4 mr-1.5" />
                 Dashboard
-              </button>
+              </button> */}
               <div className="flex items-center space-x-2 ml-2">
                 <label htmlFor="threshold" className="text-xs font-medium text-gray-700">
                   Hours Threshold:
