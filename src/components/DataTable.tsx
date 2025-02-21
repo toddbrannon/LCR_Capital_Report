@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
+import * as XLSX from 'xlsx';
 import { DataRow } from '../types';
-import { Search } from 'lucide-react';
+import { Search, Download } from 'lucide-react';
 
 interface DataTableProps {
   data: DataRow[];
@@ -22,7 +23,6 @@ export function DataTable({ data, threshold, showHighlight }: DataTableProps) {
   const pivotedData = useMemo(() => {
     const pivot: PivotData = {};
     
-    // Log the first few rows of data before processing
     console.log('Processing data in DataTable:', data.slice(0, 5));
     
     data.forEach((row) => {
@@ -46,19 +46,9 @@ export function DataTable({ data, threshold, showHighlight }: DataTableProps) {
       pivot[jobDescription][empName][checkDate] += totalHours;
     });
 
-    // Log the unique dates found in the actual data
-    const uniqueDatesInData = new Set();
-    Object.values(pivot).forEach(jobs => {
-      Object.values(jobs).forEach(dates => {
-        Object.keys(dates).forEach(date => uniqueDatesInData.add(date));
-      });
-    });
-    console.log('Unique dates found in pivoted data:', Array.from(uniqueDatesInData).sort());
-
     return pivot;
   }, [data]);
 
-  // Get actual dates from the data instead of hardcoding
   const allCheckDates = useMemo(() => {
     const uniqueDates = new Set<string>();
     data.forEach(row => {
@@ -80,24 +70,63 @@ export function DataTable({ data, threshold, showHighlight }: DataTableProps) {
     }, 0);
   };
 
+  const exportToExcel = () => {
+    const flattenedData: any[] = [];
+
+    Object.entries(pivotedData).forEach(([jobDescription, employees]) => {
+      Object.entries(employees).forEach(([empName, dates]) => {
+        const row: any = { JobDescription: jobDescription, Employee: empName };
+        allCheckDates.forEach(date => {
+          row[date] = dates[date] || 0;
+        });
+        flattenedData.push(row);
+      });
+
+      // Add the count row for this JobDescription group
+      const countRow: any = { JobDescription: `COUNT ≥ ${threshold} HRS`, Employee: '' };
+      allCheckDates.forEach(date => {
+        countRow[date] = getThresholdCount(jobDescription, date);
+      });
+      flattenedData.push(countRow);
+
+      // Add a blank row for spacing
+      flattenedData.push({});
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(flattenedData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Employee Hours');
+
+    XLSX.writeFile(workbook, 'Employee_Hours_Report.xlsx');
+  };
+
   return (
     <div className="space-y-4">
-      <div className="bg-white p-3 rounded-lg shadow-sm">
-        <div className="relative">
-          <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Search job descriptions..."
-            className="pl-8 pr-3 py-1.5 w-full text-sm border rounded-md"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+      <div className="bg-white p-3 rounded-lg shadow-sm flex justify-between items-center">
+        <div className="flex space-x-3">
+          <div className="relative">
+            <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search job descriptions..."
+              className="pl-8 pr-3 py-1.5 w-64 text-sm border rounded-md"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
         </div>
+        <button
+          onClick={exportToExcel}
+          className="flex items-center px-3 py-1.5 text-sm rounded-lg bg-blue-500 text-white hover:bg-blue-600"
+        >
+          <Download className="h-4 w-4 mr-1.5" />
+          Export to Excel
+        </button>
       </div>
 
       {filteredJobDescriptions.map((jobDescription) => (
         <div key={jobDescription} className="bg-white rounded-lg shadow-sm overflow-hidden">
-          <div className="bg-gray-50 px-4 py-2 border-b">
+          <div className="bg-gray-50 px-4 py-2 border-b flex justify-between items-center">
             <h3 className="text-base font-semibold text-gray-900">{jobDescription}</h3>
           </div>
           <div className="overflow-x-auto">

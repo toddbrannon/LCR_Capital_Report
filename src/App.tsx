@@ -18,20 +18,20 @@ function App() {
       dynamicTyping: true,
       complete: (results) => {
         const parsedData = results.data as DataRow[];
-        
+
         // Get unique CheckDates and sort them chronologically
         const uniqueDates = [...new Set(parsedData.map(row => row.CheckDate))]
           .filter(date => date) // Remove null/undefined values
           .sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
-        
+
         console.log('Raw data sample:', parsedData.slice(0, 5));
         console.log('All unique CheckDates found in CSV:', uniqueDates);
         console.log('Total number of rows:', parsedData.length);
-        
+
         // Log all unique values in the CheckDate column
         const allCheckDates = parsedData.map(row => row.CheckDate);
         console.log('All CheckDate values (including duplicates):', allCheckDates);
-        
+
         setData(parsedData);
         setShowHighlight(false);
       },
